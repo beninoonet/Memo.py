@@ -67,7 +67,6 @@ class Database:
 
         """ Application """
 class App:
-
         def __init__(self, root):
                         self.root = root
                         self.root.title("Secret Silent Box")
@@ -198,7 +197,7 @@ class App:
             results = self.db.execute_query(query)
             if results:
                 for idx, (text_id, content) in enumerate(results):
-                    lframe = LabelFrame(self.main_frame, text=f"Text ID: {text_id}", font=("Montserrat", 12, "bold"), bg="#f0f0f0", padx=10, pady=5)
+                    lframe = LabelFrame(self.main_frame, text=f"ID:{text_id}", font=("Montserrat", 12, "bold"), bg="#f0f0f0", padx=10, pady=5)
                     lframe.pack(pady=5, fill="x", expand=True)
                     text_label = Label(lframe, text=f"{idx + 1}. {content}", font=("Montserrat", 12), bg="#f0f0f0", wraplength=350, justify="center")
                     text_label.pack(pady=5, anchor="w")

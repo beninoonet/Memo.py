@@ -7,18 +7,67 @@ import psycopg2
 from dotenv import load_dotenv
 load_dotenv()
 
+import datetime
 
 # Load DB credentials from environment variables
 host = os.getenv("DB_HOST")
-database = os.getenv("DB_NAME")
+monica_database = os.getenv("DB_DATABASE_MONICA")
 user = os.getenv("DB_USER")
 password = os.getenv("DB_PASSWORD")
 
 class App:
+        def connect_db(self):
+            try:
+                self.conn = psycopg2.connect(
+                    host=host,
+                    database=monica_database,
+                    user=user,
+                    password=password
+                )
+                self.cursor = self.conn.cursor()
+                print("Connected to the database")
+            except Exception as e:
+                print(f"Error connecting to the database: {e}")
 
+        def get_tasks(self):
+            try:
+                self.cursor.execute("SELECT * FROM monica_tasks")
+                tasks = self.cursor.fetchall()
+                return tasks
+            except Exception as e:
+                print(f"Error fetching tasks: {e}")
+                return []
+
+        def see_tasks(self):
+            tasks = self.get_tasks()
+            for task in tasks:
+                print(f"Task ID: {task[0]}, Title: {task[1]}, Description: {task[2]}, Due Date: {task[3]}, Status: {task[4]}")
+                statusFrames = LabelFrame(self.root, text=f"Status: {task[4]}", font=("Helvetica", 12, "bold"), bg="#f0f0f0", padx=10, pady=5) 
+                statusFrames.pack(pady=5, fill="x", expand=True)
+
+                user_label = Label(statusFrames, text=f"Utilisateur: {task[1]}")
+                user_label.pack(pady=5, anchor="w")
+
+                task_label = Label(statusFrames, text=f"Tâche: {task[2]}")
+                task_label.pack(pady=5, anchor="w")
+
+                        # Formatage de la date/heure
+                raw_date = task[3]
+                if isinstance(raw_date, (datetime.date, datetime.datetime)):
+                    formatted_date = raw_date.strftime("%d/%m/%Y à %H:%M")
+                else:
+                    formatted_date = str(raw_date)  # au cas où ce serait déjà une chaîne
+                
+                created_label = Label(statusFrames, text=f"Crée le: {formatted_date}")
+                created_label.pack(pady=5, anchor="w")
+
+                id_label = Label(statusFrames, text=f"ID: {task[0]}")
+                id_label.pack(pady=5, anchor="w")
+                    
         def __init__(self, root):
             self.root = root
             self.root.title("Secret Silent Box - Tasklist")
+            self.connect_db()
             self.menu()
             self.windows()
             print("Task initialized")
@@ -30,6 +79,13 @@ class App:
 
             self.label = Label(self.root, text="Secret Silent Box - Tasklist", font=("Helvetica", 16), bg="#f0f0f0")
             self.label.pack(pady=10)
+            # see tasks
+            if self.get_tasks():
+                self.see_tasks()
+            
+
+
+
 
         # Menu to navigate
         def menu(self):
