@@ -38,6 +38,15 @@ class App:
                 print(f"Error fetching tasks: {e}")
                 return []
 
+        def check_db_changes(self):
+             # check if the database has changed and update the task list accordingly
+            current_tasks = self.get_tasks()
+            if current_tasks != self.previous_tasks:
+                self.previous_tasks = current_tasks
+                self.see_tasks()
+            if self.root.winfo_exists():  # Check if the window still exists
+                self.root.after(5000, self.check_db_changes)  # Check again after 5 seconds
+
         def see_tasks(self):
             tasks = self.get_tasks()
             for task in tasks:
@@ -63,7 +72,9 @@ class App:
 
                 id_label = Label(statusFrames, text=f"ID: {task[0]}")
                 id_label.pack(pady=5, anchor="w")
-                    
+            self.previous_tasks = tasks
+
+
         def __init__(self, root):
             self.root = root
             self.root.title("Secret Silent Box - Tasklist")
@@ -79,9 +90,10 @@ class App:
 
             self.label = Label(self.root, text="Secret Silent Box - Tasklist", font=("Helvetica", 16), bg="#f0f0f0")
             self.label.pack(pady=10)
-            # see tasks
-            if self.get_tasks():
-                self.see_tasks()
+
+            self.previous_tasks = []
+            self.see_tasks()
+            self.root.after(5000, self.check_db_changes)  # Check for changes every 5 seconds
             
 
 
