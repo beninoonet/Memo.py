@@ -1,7 +1,8 @@
 import customtkinter as ctk
-
 import os
 import psycopg2
+
+import tkinter as tk
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -66,8 +67,8 @@ class Database:
 
 
 
-
 class App(ctk.CTk):
+
     def __init__(self):
         super().__init__()
         self.window()
@@ -77,12 +78,23 @@ class App(ctk.CTk):
         self.title("Bloc-Note")
         self.geometry("800x600")
 
+        # Create a menubar
+        self.menu_bar = tk.Menu(self)
+        self.configure(menu=self.menu_bar)
+
+        # File menu
+        file_menu = tk.Menu(self.menu_bar, tearoff=False)
+        file_menu.add_command(label="Nouveau", command=self.new_memo)
+        self.menu_bar.add_cascade(label="File", menu=file_menu)
+
+        # Label Title
         self.title_label = ctk.CTkLabel(self, text="Texte Mémo", font=("Arial", 20))
         self.title_label.pack(pady=10)
 
         # Memo textbox
         self.memo_textbox = ctk.CTkTextbox(self, width=600, height=500)
         self.memo_textbox.pack(pady=20)
+
         # Save button
         self.save_button = ctk.CTkButton(self, text="Sauvegarder.", command=self.save_memo)
         self.save_button.pack(pady=10)
@@ -97,6 +109,9 @@ class App(ctk.CTk):
         self.destroy()
         print("Window destroyed")
 
+    def new_memo(self):
+        self.memo_textbox.delete("1.0", "end")
+
     def save_memo(self):
         memo_text = self.memo_textbox.get("1.0", "end-1c")  # Get the text from the textbox
         if memo_text.strip():  # Check if the text is not empty
@@ -105,9 +120,29 @@ class App(ctk.CTk):
             insert_query = "INSERT INTO texts (content) VALUES (%s)"
             db.execute_query(insert_query, (memo_text,))
             db.disconnect()
-            print("Texte mémoriser.")
+
+            # Check if error_label visible
+            if hasattr(self, "error_label") and self.error_label.winfo_exists():
+                self.error_label.pack_forget()
+
+            if not hasattr(self, "success_label") or not self.success_label.winfo_exists():
+                self.success_label = ctk.CTkLabel(self, text="Mémo sauvegarder", font=("Arial", 20))
+                self.success_label.pack(pady=10)
+            else:
+                self.success_label.configure(text="Mémo sauvegardé")
+
+            self.memo_textbox.delete("1.0", "end")
         else:
-            print("Impossible de sauvegarde le vide.")
+            self.bell() # Alert sound
+
+            if hasattr(self, "success_label") and self.success_label.winfo_exists():
+                self.success_label.pack_forget()
+
+            if not hasattr(self, "error_label") or not self.error_label.winfo_exists():
+                self.error_label = ctk.CTkLabel(self, text="Impossible de sauvegarder un texte vide.", font=("Arial", 20), text_color="#be2e2e")
+                self.error_label.pack(pady=10)
+            else:
+                self.error_label.configure(text="Impossible de sauvegarder un texte vide.")
 
     def load_memo(self):
         db = Database()
@@ -118,9 +153,28 @@ class App(ctk.CTk):
         if result:
             self.memo_textbox.delete("1.0", "end")  # Clear the textbox
             self.memo_textbox.insert("1.0", result[0][0])  # Insert the last saved memo
-            print("Texte chargé.")
+
+            # Check if error_label visible
+            if hasattr(self, "error_label") and self.error_label.winfo_exists():
+                self.error_label.pack_forget()
+            
+            if not hasattr(self, "success_label") or not self.success_label.winfo_exists():
+                self.success_label = ctk.CTkLabel(self, text="Dernier texte chargé.", font=("Arial", 20))
+                self.success_label.pack(pady=10)
+            else:
+                self.success_label.configure(text="Dernier texte chargé.")
+            
         else:
-            print("Aucun texte trouvé.")
+            self.bell()
+
+            if hasattr(self, "success_label") and self.success_label.winfo_exists():
+                self.success_label.pack_forget()
+            
+            if not hasattr(self, "error_label") or not self.error_label.winfo_exists():
+                self.error_label = ctk.CTkLabel(self, text="Base de donnée vide.", font=("Arial", 20), text_color="#be2e2e")
+                self.error_label.pack(pady=10)
+            else:
+                self.error_label.configure(text="Base de donnée vide.")
 
 if __name__ == "__main__":
     app = App()
