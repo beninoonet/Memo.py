@@ -1,78 +1,11 @@
 import customtkinter as ctk
-import os
-import psycopg2
-
 import tkinter as tk
 
-from dotenv import load_dotenv
-load_dotenv()
+from database import Database
 
-# Connect to the PostgreSQL database
-host = os.getenv("DB_HOST")
-database = os.getenv("DB_NAME")
-user = os.getenv("DB_USER")
-password = os.getenv("DB_PASSWORD")
-
-# Database connection
-class Database:
-    def __init__(self):
-        self.connection = None
-        self.cursor = None
-        
-
-    def connect(self):
-        try:
-            self.connection = psycopg2.connect(
-                host=host,
-                database=database,
-                user=user,
-                password=password
-            )
-            self.cursor = self.connection.cursor()
-            self.create_table()  # Create the table if it doesn't exist
-            print("Database connection successful")
-        except Exception as e:
-            print(f"Error connecting to database: {e}")
-
-    def disconnect(self):
-        if self.cursor:
-            self.cursor.close()
-        if self.connection:
-            self.connection.close()
-            print("Database connection closed")
-
-    def execute_query(self, query, params=None):
-        if self.connection is None or self.cursor is None:
-            print("Database connection is not established")
-            return None
-        try:
-            self.cursor.execute(query, params)
-            self.connection.commit()
-            if self.cursor.description is not None:
-                return self.cursor.fetchall()
-            return None
-        except Exception as e:
-            print(f"Error executing query: {e}")
-            return None
-        
-    def create_table(self):
-        create_table_query = """
-        CREATE TABLE IF NOT EXISTS memos (
-            id SERIAL PRIMARY KEY,
-            content TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        """
-        self.execute_query(create_table_query)
-        print("Table 'texts' created or already exists")
-
-
-
-class App(ctk.CTk):
-
-    def __init__(self):
-        super().__init__()
+class NewMemo(ctk.CTkToplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
         self.window()
 
 
@@ -117,8 +50,8 @@ class App(ctk.CTk):
         self.update_button.pack(side=ctk.LEFT, pady=10, padx=10)
 
     def window_close(self):
-        self.destroy()
-        print("Window destroyed")
+        self.master.deiconify()  # Show the main window again
+        self.destroy()  # Close the NewMemo window
 
     def new_memo(self):
         self.memo_textbox.delete("1.0", "end")
@@ -278,8 +211,10 @@ class App(ctk.CTk):
                 self.error_label.pack(pady=10)
             else:
                 self.error_label.configure(text="Impossible de sauvegarder un texte vide.")
-
+                
 if __name__ == "__main__":
-    app = App()
+    root = ctk.CTk()
+    root.withdraw()  # Hide the root window
+    app = NewMemo(root)
     app.protocol("WM_DELETE_WINDOW", app.window_close)
     app.mainloop()
